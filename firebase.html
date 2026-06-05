@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>一番賞刮刮樂</title>
+<style>
+:root{--bg:#080808;--card:#171717;--gold:#f5c542;--text:#f8f8f8;--muted:#aaa;--danger:#ff4d4f;--grid:#8e8e8e;--paper:#eeeeee;--blue:#4ea1ff}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#292929,#050505);color:var(--text)}
+main{width:min(96vw,1120px);margin:0 auto;padding:14px 0 40px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.badge{display:inline-block;color:var(--gold);background:rgba(245,197,66,.15);border:1px solid rgba(245,197,66,.35);padding:5px 12px;border-radius:999px;font-weight:900}
+h1{font-size:32px;margin:8px 0 4px} h2,h3{margin:10px 0}
+p{color:var(--muted);margin:4px 0;line-height:1.45}
+.card{background:rgba(23,23,23,.95);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px;margin:10px 0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1}
+button,input,textarea{width:100%;padding:13px;border-radius:12px;border:1px solid rgba(255,255,255,.14);font-size:16px}
+button{margin:7px 0;background:var(--gold);color:#111;font-weight:900}
+button.secondary{background:transparent;color:var(--text)} button.danger{background:var(--danger);color:white} button.blue{background:var(--blue);color:white}
+button:disabled{opacity:.45}
+input,textarea{background:#0f0f0f;color:white;margin:6px 0 12px}
+textarea{min-height:96px;line-height:1.5}
+label{display:block;color:var(--muted);margin-top:8px}
+.hidden{display:none!important}
+.statusGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stat{background:#101010;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px}
+.stat .n{color:var(--gold);font-size:24px;font-weight:1000}
+.gameArea{display:flex;gap:12px;align-items:flex-start}
+.statusPanel{width:200px;flex:0 0 200px;background:rgba(23,23,23,.95);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px;color:white}
+.statusPanel h3{color:var(--gold);margin:0 0 8px;font-size:20px}
+.statusBlock{border-bottom:1px solid rgba(255,255,255,.12);padding:8px 0}
+.statusBlock:last-child{border-bottom:none}
+.statusTitle{font-weight:1000;color:#fff;margin-bottom:6px}
+.statusLine{color:#f5f5f5;font-weight:800;line-height:1.65;font-size:15px}
+.statusNum{color:var(--gold)}
+.boardWrap{background:#f3f3f3;border-radius:16px;padding:12px;overflow:auto;box-shadow:0 16px 50px rgba(0,0,0,.45);flex:1;min-width:0}
+.boardShell{position:relative;display:inline-block;min-width:760px}
+.board{display:grid;grid-template-columns:repeat(16,1fr);gap:0;min-width:760px;background:var(--paper);border-top:1px solid var(--grid);border-left:1px solid var(--grid)}
+.cellBox{aspect-ratio:1/1;background:var(--paper);border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);display:flex;justify-content:center;align-items:center;min-width:0;min-height:0;overflow:hidden}
+.cellDot{width:76%;aspect-ratio:1/1;border-radius:50%;border:none;padding:0;display:flex;justify-content:center;align-items:center;text-align:center;line-height:1;background:#101010;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);color:transparent;font-size:12px;font-weight:1000}
+.cellDot.used{width:54%;background:#fbfbfb;color:#222;border:1px solid #bdbdbd;box-shadow:none}
+.cellDot.locking{outline:4px solid var(--gold)}
+.prizeOutOverlay{position:absolute;inset:0;background:rgba(185,185,185,.94);color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;font-size:48px;font-weight:1000;letter-spacing:2px;z-index:5;border-radius:4px;text-shadow:0 2px 8px rgba(0,0,0,.28);pointer-events:auto}
+.prizeOutOverlay small{display:block;font-size:24px;margin-top:12px;letter-spacing:1px}
+.settingsBtn{width:46px;height:46px;padding:0;border-radius:999px;background:rgba(0,0,0,.28);color:#888;border:1px solid rgba(255,255,255,.12);font-size:22px}
+.floatingSettings{position:fixed;right:14px;bottom:14px;z-index:8}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:grid;place-items:center;z-index:9;padding:16px}
+.modalCard{width:min(94vw,430px);background:var(--card);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:18px;position:relative}
+.close{position:absolute;right:10px;top:8px;width:44px;background:transparent;color:white;font-size:28px;border:none}
+.scratchBox{position:relative;width:100%;max-width:330px;height:230px;margin:14px auto;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,#fff0a8,#f5c542)}
+.numberReveal{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#111;font-size:70px;font-weight:1000;line-height:1;z-index:1}
+.resultPrize{font-size:18px;margin-top:10px;color:#111;font-weight:1000}
+canvas{position:absolute;inset:0;z-index:2;touch-action:none}
+#codeText{color:var(--muted);text-align:center;font-size:14px;margin:10px 0 6px}
+#winningText{color:var(--gold);text-align:center;font-size:20px;font-weight:1000;margin:4px 0 8px}
+.log{background:#0e0e0e;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px;margin-top:8px;color:var(--muted);font-size:14px}
+.poolCard{display:flex;gap:12px;align-items:center}
+.poolImg{width:96px;height:72px;object-fit:cover;border-radius:12px;background:#333;flex:0 0 96px}
+.adminGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){
+  .statusGrid{grid-template-columns:1fr 1fr}
+  .gameArea{display:block}
+  .statusPanel{width:100%;margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .statusPanel h3{grid-column:1/-1;font-size:18px}
+  .statusBlock{border-bottom:none;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px}
+  .board,.boardShell{min-width:680px}
+  h1{font-size:28px}
+  .cellDot.used{font-size:11px}
+  .prizeOutOverlay{font-size:36px}
+  .prizeOutOverlay small{font-size:20px}
+  .adminGrid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main>
+  <section class="header">
+    <div>
+      <span id="badgeText" class="badge">160刮</span>
+      <h1 id="title">一番賞刮刮樂</h1>
+      <p id="subtitle">輸入手機號碼登入，使用點數刮獎。</p>
+    </div>
+    <button id="adminOpen" class="settingsBtn" title="店家後台">⚙</button>
+  </section>
+
+  <section id="loginCard" class="card">
+    <h2>會員登入</h2>
+    <p>輸入手機號碼即可登入。點數由店家後台手動加點。</p>
+    <input id="phoneInput" placeholder="輸入手機號碼，例如 0912345678" inputmode="tel">
+    <button id="loginBtn">登入 / 註冊</button>
+  </section>
+
+  <section id="memberCard" class="card hidden">
+    <div class="row">
+      <div>
+        <h2 id="memberPhone">會員</h2>
+        <p>剩餘點數</p>
+        <div class="stat"><div class="n" id="memberPoints">0</div></div>
+      </div>
+      <div>
+        <button id="logoutBtn" class="secondary">切換會員</button>
+        <button id="refreshBtn" class="blue">重新整理</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="poolList" class="card hidden">
+    <h2>選擇賞池</h2>
+    <div id="poolCards"></div>
+  </section>
+
+  <section id="gameSection" class="hidden">
+    <div class="card">
+      <div class="poolCard">
+        <img id="poolImage" class="poolImg" alt="">
+        <div>
+          <h2 id="poolTitle">賞池</h2>
+          <p id="poolDesc"></p>
+          <p>每刮 <b id="costText" style="color:var(--gold)">10</b> 點</p>
+        </div>
+      </div>
+      <button id="backPools" class="secondary">返回賞池列表</button>
+    </div>
+
+    <section class="gameArea">
+      <aside class="statusPanel">
+        <h3>狀態</h3>
+        <div class="statusBlock">
+          <div class="statusTitle">獎項狀態</div>
+          <div class="statusLine">總獎項：<span id="totalPrizeCount" class="statusNum">0</span></div>
+          <div class="statusLine">已開出獎項：<span id="openedPrizeCount" class="statusNum">0</span></div>
+          <div class="statusLine">剩餘獎項：<span id="remainingPrizeCount" class="statusNum">0</span></div>
+        </div>
+        <div class="statusBlock">
+          <div class="statusTitle">刮卡狀態</div>
+          <div class="statusLine">總刮數：<span id="totalScratchCount" class="statusNum">160</span></div>
+          <div class="statusLine">已刮開：<span id="openedScratchCount" class="statusNum">0</span></div>
+          <div class="statusLine">剩餘可刮：<span id="remainingScratchCount" class="statusNum">160</span></div>
+        </div>
+      </aside>
+
+      <section class="boardWrap">
+        <div class="boardShell">
+          <div id="board" class="board"></div>
+          <div id="prizeOutOverlay" class="prizeOutOverlay hidden">
+            <div>所有大獎已出</div>
+            <small>請更換新賞池</small>
+          </div>
+        </div>
+      </section>
+    </section>
+  </section>
+
+  <section id="admin" class="card hidden">
+    <h2>店家後台</h2>
+    <div id="adminLoginBox">
+      <input id="adminPass" type="password" placeholder="輸入店家密碼">
+      <button id="adminLogin">登入後台</button>
+    </div>
+
+    <div id="adminBox" class="hidden">
+      <div class="adminGrid">
+        <div class="card">
+          <h3>會員加點</h3>
+          <label>手機號碼</label>
+          <input id="topupPhone" placeholder="0912345678">
+          <label>加點數</label>
+          <input id="topupAmount" type="number" placeholder="100">
+          <button id="topupBtn">加點</button>
+        </div>
+
+        <div class="card">
+          <h3>賞池設定</h3>
+          <label>賞池名稱</label>
+          <input id="poolName" placeholder="BX-35 藍鳳凰賞池">
+          <label>賞池說明</label>
+          <input id="poolDescription" placeholder="刮出獎項後找店員兌換">
+          <label>圖片網址（可不填）</label>
+          <input id="poolImageInput" placeholder="https://...">
+          <label>每刮幾點</label>
+          <input id="poolCost" type="number" value="10">
+          <label>格數</label>
+          <input id="poolCellCount" type="number" value="160">
+          <label>每列幾格</label>
+          <input id="poolCols" type="number" value="16">
+          <label>數字最大值</label>
+          <input id="poolMaxNumber" type="number" value="160">
+          <label>數字區刮開幾%顯示完成</label>
+          <input id="scratchPercent" type="number" value="50">
+          <label>中獎號碼</label>
+          <input id="winningNumbers" placeholder="1,2,3,4,5,6">
+          <label>中獎獎品文字</label>
+          <input id="prizeText" placeholder="恭喜中獎">
+          <button id="savePoolBtn">儲存賞池設定</button>
+          <button id="resetPoolBtn" class="danger">重置整個賞池</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>刮獎紀錄</h3>
+        <div id="logs"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="modal" class="modal hidden">
+  <div class="modalCard">
+    <button id="close" class="close">×</button>
+    <h2>刮開這一格</h2>
+    <div class="scratchBox">
+      <div id="numberText" class="numberReveal">
+        <div id="numberOnly">1</div>
+        <div id="prizeOnly" class="resultPrize hidden"></div>
+      </div>
+      <canvas id="canvas" width="330" height="230"></canvas>
+    </div>
+    <p id="codeText"></p>
+    <p id="winningText" class="hidden"></p>
+    <button id="finishBtn" class="hidden">完成</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot,
+  runTransaction, serverTimestamp, arrayUnion
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDQZBXtDUsRNRSh3yZlNlI6Uuly5LO9P0A",
+  authDomain: "scratch-card-3dedc.firebaseapp.com",
+  projectId: "scratch-card-3dedc",
+  storageBucket: "scratch-card-3dedc.firebasestorage.app",
+  messagingSenderId: "137821620494",
+  appId: "1:137821620494:web:93e94eb161b8947fe96f5f",
+  measurementId: "G-05DW2YH4FM"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ADMIN_PASSWORD = "0098";
+const POOL_ID = "main";
+
+const DEFAULT_POOL = {
+  title:"BX 一番賞刮刮樂",
+  description:"使用點數刮一次，刮中請找店員兌換。",
+  imageUrl:"",
+  cost:10,
+  cellCount:160,
+  cols:16,
+  maxNumber:160,
+  scratchPercent:50,
+  winningNumbers:[1,2,3,4,5,6],
+  prizeText:"恭喜中獎",
+  numbers:[],
+  used:[],
+  logs:[],
+  updatedAt:null
+};
+
+let uid=null;
+let phone="";
+let member={points:0};
+let pool=null;
+let unsubPool=null;
+let unsubMember=null;
+let selected=null,currentNumber=null,currentCode="",scratched=false,hasStartedScratch=false;
+
+const $ = id => document.getElementById(id);
+const board=$("board"), modal=$("modal"), canvas=$("canvas"), ctx=canvas.getContext("2d");
+
+function sanitizePhone(v){return String(v||"").replace(/[^0-9]/g,"").slice(0,20)}
+function makeCode(){return Math.random().toString(36).slice(2,8).toUpperCase()}
+function uniqueNumbers(arr){return [...new Set((arr||[]).map(Number).filter(x=>x>0))]}
+function parseNumberList(text){return String(text||"").split(/[,，\s]+/).map(x=>Number(x.trim())).filter(x=>Number.isFinite(x)&&x>0)}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+function makeNumbers(count,max){const nums=[];for(let i=1;i<=count;i++)nums.push(((i-1)%max)+1);return shuffle(nums)}
+function preparePool(p){
+  const cfg=Object.assign({},DEFAULT_POOL,p||{});
+  cfg.cellCount=Number(cfg.cellCount||160);
+  cfg.cols=Number(cfg.cols||16);
+  cfg.maxNumber=Number(cfg.maxNumber||cfg.cellCount);
+  cfg.cost=Number(cfg.cost||10);
+  cfg.scratchPercent=Number(cfg.scratchPercent||50);
+  cfg.winningNumbers=uniqueNumbers(cfg.winningNumbers);
+  if(!Array.isArray(cfg.numbers)||cfg.numbers.length!==cfg.cellCount) cfg.numbers=makeNumbers(cfg.cellCount,cfg.maxNumber);
+  if(!Array.isArray(cfg.used)||cfg.used.length!==cfg.cellCount) cfg.used=Array.from({length:cfg.cellCount},()=>false);
+  if(!Array.isArray(cfg.logs)) cfg.logs=[];
+  return cfg;
+}
+async function ensurePool(){
+  const ref=doc(db,"pools",POOL_ID);
+  const snap=await getDoc(ref);
+  if(!snap.exists()){
+    const p=preparePool(DEFAULT_POOL);
+    await setDoc(ref,p);
+  }
+}
+async function ensureMember(ph){
+  const ref=doc(db,"members",ph);
+  const snap=await getDoc(ref);
+  if(!snap.exists()) await setDoc(ref,{phone:ph,points:0,createdAt:serverTimestamp()});
+}
+function watchMember(ph){
+  if(unsubMember) unsubMember();
+  unsubMember=onSnapshot(doc(db,"members",ph),(snap)=>{
+    member=snap.exists()?snap.data():{points:0};
+    $("memberPhone").textContent="會員："+ph;
+    $("memberPoints").textContent=Number(member.points||0);
+  });
+}
+function watchPool(){
+  if(unsubPool) unsubPool();
+  unsubPool=onSnapshot(doc(db,"pools",POOL_ID),(snap)=>{
+    pool=preparePool(snap.data());
+    renderAll();
+  });
+}
+
+onAuthStateChanged(auth, async (user)=>{
+  if(user){uid=user.uid; await ensurePool(); watchPool();}
+});
+signInAnonymously(auth).catch(err=>alert("登入 Firebase 失敗："+err.message));
+
+$("loginBtn").onclick=async()=>{
+  const ph=sanitizePhone($("phoneInput").value);
+  if(ph.length<8) return alert("手機號碼格式不對");
+  phone=ph;
+  localStorage.setItem("lottery_phone",phone);
+  await ensureMember(phone);
+  watchMember(phone);
+  $("loginCard").classList.add("hidden");
+  $("memberCard").classList.remove("hidden");
+  $("poolList").classList.remove("hidden");
+  renderPoolCards();
+};
+$("logoutBtn").onclick=()=>{localStorage.removeItem("lottery_phone");location.reload()};
+$("refreshBtn").onclick=()=>location.reload();
+const savedPhone=localStorage.getItem("lottery_phone");
+if(savedPhone){ $("phoneInput").value=savedPhone; setTimeout(()=>$("loginBtn").click(),600); }
+
+function renderPoolCards(){
+  if(!pool) return;
+  $("poolCards").innerHTML="";
+  const opened=pool.used.filter(Boolean).length;
+  const remain=pool.cellCount-opened;
+  const div=document.createElement("div");
+  div.className="card poolCard";
+  div.innerHTML=`
+    <img class="poolImg" src="${pool.imageUrl||""}" onerror="this.style.display='none'">
+    <div>
+      <h3>${pool.title}</h3>
+      <p>${pool.description||""}</p>
+      <p>每刮 <b style="color:var(--gold)">${pool.cost}</b> 點｜剩餘 ${remain} / ${pool.cellCount}</p>
+      <button class="blue" id="enterPool">進入刮刮樂</button>
+    </div>`;
+  $("poolCards").appendChild(div);
+  $("enterPool").onclick=()=>{
+    $("poolList").classList.add("hidden");
+    $("gameSection").classList.remove("hidden");
+    renderAll();
+  };
+}
+$("backPools").onclick=()=>{$("gameSection").classList.add("hidden");$("poolList").classList.remove("hidden");renderPoolCards()};
+
+function renderAll(){
+  if(!pool) return;
+  $("badgeText").textContent=pool.cellCount+"刮";
+  $("poolTitle").textContent=pool.title;
+  $("poolDesc").textContent=pool.description||"";
+  $("poolImage").src=pool.imageUrl||"";
+  $("poolImage").style.display=pool.imageUrl?"block":"none";
+  $("costText").textContent=pool.cost;
+  board.style.gridTemplateColumns=`repeat(${pool.cols},1fr)`;
+  board.innerHTML="";
+  for(let i=0;i<pool.cellCount;i++){
+    const box=document.createElement("div"); box.className="cellBox";
+    const dot=document.createElement("button"); dot.className="cellDot";
+    if(pool.used[i]){ dot.classList.add("used"); dot.textContent=pool.numbers[i]; }
+    else{ dot.onclick=()=>openScratch(i); }
+    box.appendChild(dot); board.appendChild(box);
+  }
+  renderStatus();
+  renderLogs();
+  renderPoolCards();
+}
+function usedNumbers(){return pool.used.map((used,i)=>used?Number(pool.numbers[i]):null).filter(x=>x!==null)}
+function openedWinningNumbers(){
+  const wins=uniqueNumbers(pool.winningNumbers);
+  const used=usedNumbers();
+  return wins.filter(n=>used.includes(n));
+}
+function allWinningNumbersOut(){
+  const wins=uniqueNumbers(pool.winningNumbers);
+  if(!wins.length) return false;
+  return openedWinningNumbers().length>=wins.length;
+}
+function renderStatus(){
+  const wins=uniqueNumbers(pool.winningNumbers);
+  const openedPrize=openedWinningNumbers().length;
+  const totalPrize=wins.length;
+  const remainingPrize=Math.max(totalPrize-openedPrize,0);
+  const openedScratch=pool.used.filter(Boolean).length;
+  const remainingScratch=Math.max(pool.cellCount-openedScratch,0);
+  $("totalPrizeCount").textContent=totalPrize;
+  $("openedPrizeCount").textContent=openedPrize;
+  $("remainingPrizeCount").textContent=remainingPrize;
+  $("totalScratchCount").textContent=pool.cellCount;
+  $("openedScratchCount").textContent=openedScratch;
+  $("remainingScratchCount").textContent=remainingScratch;
+  $("prizeOutOverlay").classList.toggle("hidden",!allWinningNumbersOut());
+}
+function renderLogs(){
+  const logs=$("logs"); if(!logs || !pool) return;
+  logs.innerHTML="";
+  const list=(pool.logs||[]).slice(0,60);
+  if(!list.length){ logs.innerHTML="<p>目前沒有紀錄。</p>";return; }
+  list.forEach(l=>{
+    const div=document.createElement("div"); div.className="log";
+    div.textContent=`${l.time||""}｜${l.phone||""}｜第 ${l.index} 格｜號碼 ${l.number}${l.prize?"｜"+l.prize:""}｜${l.code||""}`;
+    logs.appendChild(div);
+  });
+}
+
+async function openScratch(i){
+  if(!phone) return alert("請先登入手機號碼");
+  if(!pool || pool.used[i]) return alert("這格已經刮過");
+  if(Number(member.points||0)<Number(pool.cost)) return alert("點數不足，請找店員加點");
+  selected=i; currentNumber=pool.numbers[i]; currentCode=makeCode(); scratched=false; hasStartedScratch=false;
+  $("numberOnly").textContent=currentNumber;
+  $("prizeOnly").textContent="";
+  $("prizeOnly").classList.add("hidden");
+  $("codeText").textContent="";
+  $("winningText").textContent="";
+  $("winningText").classList.add("hidden");
+  $("finishBtn").classList.add("hidden");
+  $("finishBtn").disabled=false;
+  $("close").classList.remove("hidden");
+  modal.classList.remove("hidden");
+  setupCanvas();
+}
+function setupCanvas(){
+  ctx.globalCompositeOperation="source-over";
+  const g=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+  g.addColorStop(0,"#111");g.addColorStop(.5,"#5c5c5c");g.addColorStop(1,"#111");
+  ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="rgba(255,255,255,.92)";ctx.textAlign="center";ctx.font="900 36px sans-serif";ctx.fillText("刮開",canvas.width/2,canvas.height/2+12);
+  ctx.globalCompositeOperation="destination-out";
+}
+function getPos(e){const rect=canvas.getBoundingClientRect();return{x:(e.clientX-rect.left)*canvas.width/rect.width,y:(e.clientY-rect.top)*canvas.height/rect.height}}
+function scratch(e){
+  if(!hasStartedScratch){hasStartedScratch=true;$("close").classList.add("hidden")}
+  const p=getPos(e);ctx.beginPath();ctx.arc(p.x,p.y,23,0,Math.PI*2);ctx.fill();checkScratch()
+}
+function checkScratch(){
+  if(!pool) return;
+  const boxW=Math.floor(canvas.width*0.56),boxH=Math.floor(canvas.height*0.50);
+  const startX=Math.floor((canvas.width-boxW)/2),startY=Math.floor((canvas.height-boxH)/2);
+  const data=ctx.getImageData(startX,startY,boxW,boxH).data;
+  let clear=0;for(let i=3;i<data.length;i+=4)if(data[i]===0)clear++;
+  const ratio=clear/(data.length/4);
+  if(ratio>(Number(pool.scratchPercent)/100)&&!scratched){
+    scratched=true;
+    $("codeText").textContent="兌獎代碼："+currentCode;
+    showWinningLine(currentNumber);
+    $("finishBtn").classList.remove("hidden");
+  }
+}
+canvas.addEventListener("pointerdown",e=>{drawing=true;scratch(e)});
+canvas.addEventListener("pointermove",e=>{if(drawing)scratch(e)});
+canvas.addEventListener("pointerup",()=>drawing=false);
+canvas.addEventListener("pointerleave",()=>drawing=false);
+let drawing=false;
+
+function showWinningLine(num){
+  if(!uniqueNumbers(pool.winningNumbers).includes(Number(num))) return;
+  $("winningText").textContent=pool.prizeText||"恭喜中獎";
+  $("winningText").classList.remove("hidden");
+  $("prizeOnly").textContent=pool.prizeText||"恭喜中獎";
+  $("prizeOnly").classList.remove("hidden");
+}
+$("close").onclick=()=>{if(!hasStartedScratch) modal.classList.add("hidden")};
+$("finishBtn").onclick=async()=>{
+  if(selected===null) return;
+  $("finishBtn").disabled=true;
+  const idx=selected;
+  selected=null;
+  try{
+    await runTransaction(db, async (tx)=>{
+      const poolRef=doc(db,"pools",POOL_ID);
+      const memRef=doc(db,"members",phone);
+      const ps=await tx.get(poolRef);
+      const ms=await tx.get(memRef);
+      if(!ps.exists()) throw new Error("賞池不存在");
+      if(!ms.exists()) throw new Error("會員不存在");
+      const p=preparePool(ps.data());
+      const m=ms.data();
+      if(p.used[idx]) throw new Error("這格已被刮走，請重選");
+      if(Number(m.points||0)<Number(p.cost)) throw new Error("點數不足");
+      p.used[idx]=true;
+      const n=Number(p.numbers[idx]);
+      const won=uniqueNumbers(p.winningNumbers).includes(n);
+      const log={
+        index:idx+1, number:n, prize:won?(p.prizeText||"中獎"):"",
+        code:currentCode, phone, time:new Date().toLocaleString("zh-TW")
+      };
+      tx.update(poolRef,{used:p.used,logs:[log,...(p.logs||[])].slice(0,200),updatedAt:serverTimestamp()});
+      tx.update(memRef,{points:Number(m.points||0)-Number(p.cost),lastPlayAt:serverTimestamp()});
+    });
+    modal.classList.add("hidden");
+  }catch(err){
+    alert(err.message||String(err));
+    modal.classList.add("hidden");
+  }
+};
+
+$("adminOpen").onclick=()=>{
+  $("admin").classList.toggle("hidden");
+  $("adminLoginBox").classList.remove("hidden");
+  $("adminBox").classList.add("hidden");
+  $("adminPass").value="";
+};
+$("adminLogin").onclick=()=>{
+  if($("adminPass").value!==ADMIN_PASSWORD) return alert("密碼錯誤");
+  $("adminLoginBox").classList.add("hidden");
+  $("adminBox").classList.remove("hidden");
+  fillAdmin();
+};
+function fillAdmin(){
+  if(!pool) return;
+  $("poolName").value=pool.title;
+  $("poolDescription").value=pool.description||"";
+  $("poolImageInput").value=pool.imageUrl||"";
+  $("poolCost").value=pool.cost;
+  $("poolCellCount").value=pool.cellCount;
+  $("poolCols").value=pool.cols;
+  $("poolMaxNumber").value=pool.maxNumber;
+  $("scratchPercent").value=pool.scratchPercent;
+  $("winningNumbers").value=uniqueNumbers(pool.winningNumbers).join(", ");
+  $("prizeText").value=pool.prizeText||"恭喜中獎";
+  renderLogs();
+}
+$("topupBtn").onclick=async()=>{
+  const ph=sanitizePhone($("topupPhone").value);
+  const amt=Number($("topupAmount").value||0);
+  if(ph.length<8) return alert("手機號碼格式不對");
+  if(!amt) return alert("請輸入加點數");
+  const ref=doc(db,"members",ph);
+  await runTransaction(db, async(tx)=>{
+    const snap=await tx.get(ref);
+    const old=snap.exists()?Number(snap.data().points||0):0;
+    tx.set(ref,{phone:ph,points:old+amt,updatedAt:serverTimestamp()},{merge:true});
+  });
+  alert("已加點");
+};
+$("savePoolBtn").onclick=async()=>{
+  const ref=doc(db,"pools",POOL_ID);
+  const oldCell=Number(pool.cellCount), oldMax=Number(pool.maxNumber);
+  const newCell=Number($("poolCellCount").value||160);
+  const newMax=Number($("poolMaxNumber").value||newCell);
+  const data={
+    title:$("poolName").value||"一番賞刮刮樂",
+    description:$("poolDescription").value||"",
+    imageUrl:$("poolImageInput").value||"",
+    cost:Number($("poolCost").value||10),
+    cellCount:newCell,
+    cols:Number($("poolCols").value||16),
+    maxNumber:newMax,
+    scratchPercent:Number($("scratchPercent").value||50),
+    winningNumbers:uniqueNumbers(parseNumberList($("winningNumbers").value)),
+    prizeText:$("prizeText").value||"恭喜中獎",
+    updatedAt:serverTimestamp()
+  };
+  if(oldCell!==newCell || oldMax!==newMax){
+    if(!confirm("格數或數字最大值變更，會重置整個賞池，確定？")) return;
+    data.numbers=makeNumbers(newCell,newMax);
+    data.used=Array.from({length:newCell},()=>false);
+    data.logs=[];
+  }
+  await setDoc(ref,data,{merge:true});
+  alert("已儲存");
+};
+$("resetPoolBtn").onclick=async()=>{
+  if(!confirm("確定重置整個賞池？所有已刮紀錄會清掉。")) return;
+  const cell=Number($("poolCellCount").value||pool.cellCount||160);
+  const max=Number($("poolMaxNumber").value||pool.maxNumber||cell);
+  await setDoc(doc(db,"pools",POOL_ID),{
+    ...pool,
+    cellCount:cell,
+    maxNumber:max,
+    numbers:makeNumbers(cell,max),
+    used:Array.from({length:cell},()=>false),
+    logs:[],
+    updatedAt:serverTimestamp()
+  },{merge:true});
+  alert("已重置");
+};
+</script>
+</body>
+</html>
