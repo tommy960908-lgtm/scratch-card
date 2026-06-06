@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>商家後台</title>
+<style>
+:root{--bg:#080808;--card:#171717;--gold:#f5c542;--text:#f8f8f8;--muted:#aaa;--danger:#ff4d4f;--blue:#4ea1ff}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#2b2b2b,#050505);color:var(--text)}
+main{width:min(96vw,1120px);margin:0 auto;padding:14px 0 40px}
+h1{font-size:31px;margin:8px 0 3px}h2,h3{margin:10px 0}p{color:var(--muted);margin:4px 0;line-height:1.45}
+.card{background:rgba(23,23,23,.95);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px;margin:10px 0}
+button,input,textarea{width:100%;padding:13px;border-radius:12px;border:1px solid rgba(255,255,255,.14);font-size:16px}
+button{margin:7px 0;background:var(--gold);color:#111;font-weight:900}
+button.blue{background:var(--blue);color:white}button.danger{background:var(--danger);color:white}button.secondary{background:transparent;color:white}
+input,textarea{background:#0f0f0f;color:white;margin:6px 0 12px}textarea{min-height:120px;line-height:1.5}
+label{display:block;color:var(--muted);margin-top:8px}.hidden{display:none!important}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+.adminGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.poolGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.poolCard{background:#101010;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px}
+.poolCard h3{color:var(--gold)}
+.log{background:#0e0e0e;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px;margin-top:8px;color:var(--muted);font-size:14px}
+a{color:var(--gold)}
+@media(max-width:750px){.adminGrid{grid-template-columns:1fr}}
+
+.imgPreview{width:100%;max-height:160px;object-fit:cover;border-radius:12px;background:#333;margin:6px 0 12px;display:none}
+
+
+.historyItem,.redeemItem{background:#101010;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px;margin:8px 0}
+
+</style>
+</head>
+<body>
+<main>
+<section class="card">
+  <div class="row">
+    <div>
+      <h1>商家後台</h1>
+      <p>請使用商家帳號登入後管理賞池與玩家點數。</p>
+    </div>
+    <div>
+      <a href="firebase.html">回玩家頁</a>
+    </div>
+  </div>
+</section>
+
+<section id="loginBox" class="card">
+  <h2>商家登入</h2>
+  <label>商家帳號</label>
+  <input id="adminAccount" placeholder="admin" autocomplete="username">
+  <label>商家密碼</label>
+  <input id="adminPassword" type="password" placeholder="0098" autocomplete="current-password">
+  <button id="adminLogin">登入</button>
+  <p>預設帳號：admin，密碼：0098</p>
+</section>
+
+<section id="adminBox" class="hidden">
+  <div class="adminGrid">
+    <div class="card">
+      <h2>會員點數管理</h2>
+      <label>玩家手機號碼</label>
+      <input id="adjustPhone" placeholder="0912345678">
+      <label>調整點數</label>
+      <input id="adjustAmount" type="number" placeholder="100">
+      <div class="row">
+        <button id="addPoints">加點</button>
+        <button id="deductPoints" class="danger">扣點</button>
+      </div>
+      <p id="adjustMsg"></p>
+    </div>
+
+    <div class="card">
+      <h2>新增 / 更新賞池</h2>
+      <label>賞池ID（英文/數字，不要空白）</label>
+      <input id="poolIdInput" placeholder="phoenix">
+      <label>賞池名稱</label>
+      <input id="poolName" placeholder="鳳凰飛翼賞池">
+      <label>說明</label>
+      <input id="poolDescription" placeholder="刮中後可在背包領獎或換點">
+      <label>每刮幾點</label>
+      <input id="poolCost" type="number" value="10">
+      <label>每列幾格</label>
+      <input id="poolCols" type="number" value="16">
+      <label>刮開幾%顯示完成</label>
+      <input id="scratchPercent" type="number" value="50">
+      <label>獎項設定（一行一個：等級,獎品名稱,數量,兌換點數）</label>
+      <textarea id="prizeLines">A賞,鳳凰飛翼,1,5000
+B賞,藍天馬,2,3000
+C賞,發射器,5,1000
+D賞,小賞,152,50</textarea>
+      
+<label>賞池封面圖片網址（GitHub images 或其他圖片網址）</label>
+<input id="coverImage" placeholder="https://.../cover.jpg">
+
+<label>A賞圖片網址</label>
+<input id="imgA" placeholder="https://.../A.jpg">
+<label>B賞圖片網址</label>
+<input id="imgB" placeholder="https://.../B.jpg">
+<label>C賞圖片網址</label>
+<input id="imgC" placeholder="https://.../C.jpg">
+<label>D賞圖片網址</label>
+<input id="imgD" placeholder="https://.../D.jpg">
+
+
+<label>最後賞名稱</label>
+<input id="lastOneName" placeholder="最後賞">
+<label>最後賞圖片網址</label>
+<input id="lastOneImage" placeholder="https://.../lastone.jpg">
+<label>最後賞兌換點數</label>
+<input id="lastOnePoints" type="number" value="0">
+
+<button id="savePool">儲存並產生賞池</button>
+      <button id="closePool" class="danger">關閉賞池</button>
+      <button id="deletePool" class="danger">刪除賞池</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>賞池列表</h2>
+    <div id="poolCards" class="poolGrid"></div>
+  </section>
+
+  
+<section class="card">
+  <h2>會員兌獎紀錄查詢</h2>
+  <label>玩家手機號碼</label>
+  <input id="memberRedeemPhone" placeholder="0912345678">
+  <button id="loadRedeemLogs" class="blue">查看兌獎紀錄</button>
+  <div id="redeemLogs"></div>
+</section>
+
+<section class="card">
+    <h2>抽獎紀錄</h2>
+    <div id="logs"></div>
+  </section>
+</section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDQZBXtDUsRNRSh3yZlNlI6Uuly5LO9P0A",
+  authDomain: "scratch-card-3dedc.firebaseapp.com",
+  projectId: "scratch-card-3dedc",
+  storageBucket: "scratch-card-3dedc.firebasestorage.app",
+  messagingSenderId: "137821620494",
+  appId: "1:137821620494:web:93e94eb161b8947fe96f5f",
+  measurementId: "G-05DW2YH4FM"
+};
+const MERCHANT_ACCOUNT = "admin";
+const MERCHANT_PASSWORD = "0098";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $ = id => document.getElementById(id);
+
+let pools = [];
+signInAnonymously(auth).catch(e => alert("Firebase 登入失敗：" + e.message));
+
+function now(){return new Date().toLocaleString("zh-TW")}
+function cleanPhone(v){return String(v||"").replace(/[^0-9]/g,"").slice(0,20)}
+function parsePrizeLines(text){
+  return String(text||"").split("\n").map(x=>x.trim()).filter(Boolean).map(line=>{
+    const [tier,name,qty,exchangePoints] = line.split(/[,，]/).map(x=>String(x||"").trim());
+    return {tier:tier||"D賞",name:name||"小賞",qty:Number(qty||1),exchangePoints:Number(exchangePoints||0)};
+  }).filter(x=>x.qty>0);
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function buildDeck(prizes){
+  const deck=[];
+  prizes.forEach((p,pi)=>{for(let i=0;i<p.qty;i++)deck.push({tier:p.tier,name:p.name,exchangePoints:p.exchangePoints,prizeIndex:pi})});
+  return shuffle(deck);
+}
+
+$("adminLogin").onclick = () => {
+  const account = $("adminAccount").value.trim();
+  const password = $("adminPassword").value;
+  if(account !== MERCHANT_ACCOUNT || password !== MERCHANT_PASSWORD){
+    alert("商家帳號或密碼錯誤");
+    return;
+  }
+  sessionStorage.setItem("merchantLogin","1");
+  $("loginBox").classList.add("hidden");
+  $("adminBox").classList.remove("hidden");
+  watchPools();
+};
+
+if(sessionStorage.getItem("merchantLogin")==="1"){
+  $("loginBox").classList.add("hidden");
+  $("adminBox").classList.remove("hidden");
+  watchPools();
+}
+
+function watchPools(){
+  onSnapshot(collection(db,"pools"),snap=>{
+    pools = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderPools();
+  });
+}
+
+function renderPools(){
+  const box = $("poolCards");
+  box.innerHTML = "";
+  if(!pools.length){box.innerHTML="<p>目前沒有賞池。</p>"; return;}
+  pools.forEach(p=>{
+    const used=(p.used||[]).filter(Boolean).length;
+    const total=(p.deck||[]).length;
+    const remain=total-used;
+    const div=document.createElement("div");
+    div.className="poolCard";
+    div.innerHTML = `<h3>${p.title||p.id}</h3>
+      <p>ID：${p.id}</p>
+      <p>每刮：${p.cost||10} 點</p>
+      <p>剩餘：${remain} / ${total}</p>
+      <p>狀態：${p.isActive===false?"已關閉":"開放中"}</p>
+      <button class="blue">載入編輯</button>`;
+    div.querySelector("button").onclick=()=>loadPool(p);
+    box.appendChild(div);
+  });
+}
+
+function loadPool(p){
+  $("poolIdInput").value=p.id;
+  $("poolName").value=p.title||"";
+  $("poolDescription").value=p.description||"";
+  $("poolCost").value=p.cost||10;
+  $("poolCols").value=p.cols||16;
+  $("scratchPercent").value=p.scratchPercent||50;
+  $("coverImage").value=p.images?.cover||"";$("imgA").value=p.images?.A||"";$("imgB").value=p.images?.B||"";$("imgC").value=p.images?.C||"";$("imgD").value=p.images?.D||"";$("prizeLines").value=(p.prizes||[]).map(x=>`${x.tier},${x.name},${x.qty},${x.exchangePoints||0}`).join("\n");
+  renderLogs(p);
+}
+
+async function adjustPoints(sign){
+  const ph=cleanPhone($("adjustPhone").value);
+  const amt=Number($("adjustAmount").value||0);
+  if(ph.length<8){alert("手機號碼格式錯誤"); return;}
+  if(amt<=0){alert("點數錯誤"); return;}
+  await runTransaction(db,async tx=>{
+    const ref=doc(db,"members",ph);
+    const snap=await tx.get(ref);
+    const m=snap.exists()?snap.data():{phone:ph,points:0,bag:[],pointLogs:[]};
+    const next=Number(m.points||0)+sign*amt;
+    if(next<0)throw new Error("點數不足，無法扣除");
+    tx.set(ref,{
+      phone:ph,
+      points:next,
+      bag:m.bag||[],
+      pointLogs:[{type:sign>0?"店家加點":"店家扣點",amount:sign*amt,time:now()},...(m.pointLogs||[])].slice(0,200),
+      updatedAt:serverTimestamp()
+    },{merge:true});
+  });
+  $("adjustMsg").textContent = "完成";
+  alert("完成");
+}
+$("addPoints").onclick=()=>adjustPoints(1);
+$("deductPoints").onclick=()=>adjustPoints(-1);
+
+$("savePool").onclick=async()=>{
+  const id=String($("poolIdInput").value||"").trim();
+  if(!id.match(/^[a-zA-Z0-9_-]+$/)){alert("賞池ID只能用英文、數字、底線或減號"); return;}
+  const prizes=parsePrizeLines($("prizeLines").value);
+  if(!prizes.length){alert("請輸入獎項設定"); return;}
+  const deck=buildDeck(prizes);
+  const used=Array.from({length:deck.length},()=>false);
+  await setDoc(doc(db,"pools",id),{
+    title:$("poolName").value||id,
+    description:$("poolDescription").value||"",
+    cost:Number($("poolCost").value||10),
+    cols:Number($("poolCols").value||16),
+    scratchPercent:Number($("scratchPercent").value||50),
+    prizes,
+    images:{
+      cover:$("coverImage").value||"",
+      A:$("imgA").value||"",
+      B:$("imgB").value||"",
+      C:$("imgC").value||"",
+      D:$("imgD").value||""
+    },
+    lastOne:{name:$("lastOneName").value||"",imageUrl:$("lastOneImage").value||"",exchangePoints:Number($("lastOnePoints").value||0)},
+    deck,
+    used,
+    logs:[],
+    isActive:true,
+    updatedAt:serverTimestamp()
+  },{merge:true});
+  alert("賞池已儲存並重置");
+};
+
+$("closePool").onclick=async()=>{
+  const id=String($("poolIdInput").value||"").trim();
+  if(!id){alert("請輸入賞池ID"); return;}
+  if(!confirm("確定關閉這個賞池？玩家端將不會看到。"))return;
+  await updateDoc(doc(db,"pools",id),{isActive:false,updatedAt:serverTimestamp()});
+  alert("已關閉賞池");
+};
+
+
+$("deletePool").onclick=async()=>{
+  const id=String($("poolIdInput").value||"").trim();
+  if(!id){alert("請先輸入或載入賞池ID");return;}
+  if(!confirm(`確定要刪除賞池「${id}」？\n\n刪除後玩家端會看不到，賞池資料也會從資料庫移除。`))return;
+  if(!confirm("再次確認：真的要刪除嗎？這個動作不能復原。"))return;
+  await deleteDoc(doc(db,"pools",id));
+  $("poolIdInput").value="";
+  $("poolName").value="";
+  $("poolDescription").value="";
+  $("prizeLines").value="";
+  if($("coverImage"))$("coverImage").value="";
+  if($("imgA"))$("imgA").value="";
+  if($("imgB"))$("imgB").value="";
+  if($("imgC"))$("imgC").value="";
+  if($("imgD"))$("imgD").value="";
+  if($("lastOneName"))$("lastOneName").value="";
+  if($("lastOneImage"))$("lastOneImage").value="";
+  if($("lastOnePoints"))$("lastOnePoints").value="";
+  alert("賞池已刪除");
+};
+
+function renderLogs(p){
+  const logs=$("logs");
+  logs.innerHTML="";
+  const list=(p.logs||[]).slice(0,100);
+  if(!list.length){logs.innerHTML="<p>目前沒有紀錄。</p>"; return;}
+  list.forEach(l=>{
+    const div=document.createElement("div");
+    div.className="log";
+    div.textContent=`${l.time||""}｜${l.phone||""}｜${l.tier||""} ${l.name||""}｜第${l.index||""}格`;
+    logs.appendChild(div);
+  });
+}
+
+$("loadRedeemLogs").onclick=async()=>{
+  const ph=cleanPhone($("memberRedeemPhone").value);
+  if(ph.length<8){alert("手機號碼格式錯誤");return;}
+  const snap=await getDoc(doc(db,"members",ph));
+  const box=$("redeemLogs");
+  box.innerHTML="";
+  if(!snap.exists()){box.innerHTML="<p>查無會員。</p>";return;}
+  const logs=snap.data().redeemLogs||[];
+  if(!logs.length){box.innerHTML="<p>目前沒有兌獎紀錄。</p>";return;}
+  logs.slice().reverse().forEach(l=>{
+    const div=document.createElement("div");
+    div.className="redeemItem";
+    div.innerHTML=`<h3>${l.tier||""} ${l.item||""}</h3><p>狀態：${l.status||""}</p><p>玩家：${l.phone||ph}</p><p>賞池：${l.poolTitle||""}</p><p>時間：${l.time||""}</p>${l.points?`<p>兌換點數：${l.points}</p>`:""}`;
+    box.appendChild(div);
+  });
+};
+
+</script>
+</body>
+</html>
