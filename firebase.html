@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>一番賞刮刮樂</title>
+<style>
+:root{--bg:#080808;--card:#171717;--gold:#f5c542;--text:#f8f8f8;--muted:#aaa;--danger:#ff4d4f;--blue:#4ea1ff;--grid:#8e8e8e;--paper:#eee}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#2b2b2b,#050505);color:var(--text)}
+main{width:min(96vw,1180px);margin:0 auto;padding:14px 0 40px}
+h1{font-size:31px;margin:8px 0 3px}h2,h3{margin:10px 0}p{color:var(--muted);margin:4px 0;line-height:1.45}
+.header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
+.card{background:rgba(23,23,23,.95);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px;margin:10px 0}
+button,input,textarea,select{width:100%;padding:13px;border-radius:12px;border:1px solid rgba(255,255,255,.14);font-size:16px}
+button{margin:7px 0;background:var(--gold);color:#111;font-weight:900}
+button.secondary{background:transparent;color:var(--text)}button.danger{background:var(--danger);color:white}button.blue{background:var(--blue);color:white}
+button:disabled{opacity:.45}
+input,textarea,select{background:#0f0f0f;color:white;margin:6px 0 12px}textarea{min-height:120px;line-height:1.5}
+label{display:block;color:var(--muted);margin-top:8px}.hidden{display:none!important}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+.poolGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.poolCard{background:#101010;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px}
+.poolCard h3{color:var(--gold)}
+.stat{background:#101010;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px}.stat b{color:var(--gold);font-size:25px}
+.gameArea{display:flex;gap:12px;align-items:flex-start}
+.statusPanel{width:220px;flex:0 0 220px;background:rgba(23,23,23,.95);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px}
+.statusTitle{font-weight:1000;margin:8px 0;color:white}.statusLine{font-weight:800;line-height:1.65}.statusNum{color:var(--gold)}
+.boardWrap{background:#f3f3f3;border-radius:16px;padding:12px;overflow:auto;box-shadow:0 16px 50px rgba(0,0,0,.45);flex:1;min-width:0}
+.boardShell{position:relative;display:inline-block;min-width:760px}
+.board{display:grid;grid-template-columns:repeat(16,1fr);gap:0;min-width:760px;background:var(--paper);border-top:1px solid var(--grid);border-left:1px solid var(--grid)}
+.cellBox{aspect-ratio:1/1;background:var(--paper);border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);display:flex;justify-content:center;align-items:center;overflow:hidden}
+.cellDot{width:76%;aspect-ratio:1/1;border-radius:50%;border:none;padding:0;background:#101010;color:transparent;font-size:11px;font-weight:1000;display:flex;align-items:center;justify-content:center;line-height:1}
+.cellDot.used{width:60%;color:#111;background:white;border:1px solid #bbb}
+.cellDot.tierA{background:linear-gradient(135deg,#fff2a8,#f5c542);color:#111}
+.cellDot.tierB{background:linear-gradient(135deg,#fff,#bfc3ca);color:#111}
+.cellDot.tierC{background:linear-gradient(135deg,#ffd2a0,#b87333);color:#111}
+.cellDot.tierD{background:white;color:#111}
+.prizeOutOverlay{position:absolute;inset:0;background:rgba(185,185,185,.94);color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;font-size:46px;font-weight:1000;letter-spacing:2px;z-index:5;text-shadow:0 2px 8px rgba(0,0,0,.28)}
+.prizeOutOverlay small{font-size:24px;margin-top:12px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.98);display:grid;place-items:center;z-index:9999;padding:16px;backdrop-filter:blur(8px)}
+.modalCard{width:min(94vw,430px);background:#171717;border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:18px;position:relative}
+.close{position:absolute;right:10px;top:8px;width:44px;height:44px;background:transparent;color:white;font-size:28px;border:none;padding:0;line-height:1}
+.scratchBox{position:relative;width:100%;max-width:330px;height:230px;margin:14px auto;border-radius:18px;overflow:hidden;background:#1b1b1b}
+.reveal{position:absolute;inset:4px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:#111;font-weight:1000;line-height:1;z-index:1;padding:15px;border-radius:14px;overflow:hidden}
+.reveal .tier{font-size:64px}.reveal .name{font-size:22px;margin-top:14px}
+.bgA{background:linear-gradient(135deg,#fff1a8,#f5c542)}.bgB{background:linear-gradient(135deg,#fff,#bfc3ca)}.bgC{background:linear-gradient(135deg,#ffd2a0,#b87333)}.bgD{background:white}
+canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;touch-action:none;border-radius:18px}
+#winText{color:var(--gold);text-align:center;font-weight:1000;font-size:20px}
+.bagItem{background:#101010;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;margin:8px 0}
+.log{background:#0e0e0e;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px;margin-top:8px;color:var(--muted);font-size:14px}
+.adminGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:750px){.gameArea{display:block}.statusPanel{width:100%;margin-bottom:10px}.board,.boardShell{min-width:680px}.adminGrid{grid-template-columns:1fr}.reveal .tier{font-size:54px}.reveal .name{font-size:20px}}
+
+
+
+
+
+
+
+
+
+.poolCover{width:100%;height:160px;object-fit:cover;border-radius:12px;background:#333;margin-bottom:8px}
+.prizeItem{background:#101010;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px;margin:8px 0}
+.prizeItem img{width:100%;max-height:190px;object-fit:cover;border-radius:12px;background:#333;margin:6px 0}
+.bagItem img{width:100%;max-height:160px;object-fit:cover;border-radius:12px;background:#333;margin:6px 0}
+
+
+/* V4 修正：查看獎項彈窗可滑動 */
+.modalCard{
+  max-height:90vh!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+#prizeList{
+  max-height:72vh!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  padding-right:2px!important;
+}
+
+
+.majorOutNotice{
+  background:linear-gradient(135deg,#3a3a3a,#111);
+  border:2px solid rgba(245,197,66,.7);
+  color:#f5c542;
+  border-radius:14px;
+  padding:12px;
+  margin:10px 0;
+  text-align:center;
+  font-size:24px;
+  font-weight:1000;
+  letter-spacing:2px;
+}
+.majorOutSmall{
+  color:#ddd;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:0;
+  margin-top:4px;
+}
+
+
+.poolLockNotice{
+  background:#2a1111;
+  border:1px solid rgba(255,77,79,.65);
+  color:#ffb3b3;
+  border-radius:12px;
+  padding:10px;
+  margin:8px 0;
+  font-weight:800;
+  text-align:center;
+}
+
+
+.countdownBox{
+  border-top:1px solid rgba(255,255,255,.14);
+  margin-top:10px;
+  padding-top:10px;
+}
+.countdownTime{
+  color:#f5c542;
+  font-size:26px;
+  font-weight:1000;
+  letter-spacing:1px;
+}
+
+
+/* V6 功能 */
+.rateBadge{
+  display:inline-block;
+  background:rgba(245,197,66,.13);
+  border:1px solid rgba(245,197,66,.45);
+  color:#f5c542;
+  padding:5px 10px;
+  border-radius:999px;
+  font-weight:900;
+  margin:4px 0;
+}
+.historyItem{
+  background:#101010;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  padding:10px;
+  margin:8px 0;
+}
+.lastOneBadge{
+  display:inline-block;
+  background:linear-gradient(135deg,#fff1a8,#f5c542);
+  color:#111;
+  padding:5px 10px;
+  border-radius:999px;
+  font-weight:1000;
+  margin:4px 0;
+}
+
+
+.bagSectionTitle{
+  margin-top:14px;
+  padding:10px;
+  border-radius:12px;
+  background:rgba(245,197,66,.12);
+  border:1px solid rgba(245,197,66,.35);
+  color:#f5c542;
+  font-weight:1000;
+  font-size:20px;
+}
+.lastOnePopupText{
+  color:#f5c542;
+  font-size:22px;
+  font-weight:1000;
+  text-align:center;
+  line-height:1.5;
+}
+
+</style>
+</head>
+<body>
+<main>
+<section class="header">
+  <div><h1>一番賞刮刮樂</h1><p>手機登入、點數刮獎、獎品進背包。</p></div>
+</section>
+
+<section id="loginCard" class="card">
+  <h2>會員登入</h2><p>第一次註冊送 50 點。新會員第一次登入會設定密碼。</p>
+  <input id="phoneInput" placeholder="輸入手機號碼，例如 0912345678" inputmode="tel">
+  <input id="passwordInput" type="password" placeholder="輸入密碼（新會員第一次可留空）" autocomplete="current-password">
+  <button id="loginBtn">登入 / 註冊</button>
+</section>
+
+<section id="memberCard" class="card hidden">
+  <div class="row">
+    <div><h2 id="memberPhone">會員</h2><p>剩餘點數</p><div class="stat"><b id="memberPoints">0</b></div></div>
+    <div><button id="showBag" class="blue">我的背包</button><button id="changePasswordBtn" class="secondary">修改密碼</button><button id="showHistory" class="secondary">抽獎紀錄</button><button id="logoutBtn" class="secondary">切換會員</button></div>
+  </div>
+</section>
+
+<section id="poolList" class="card hidden">
+  <h2>選擇賞池</h2><div id="poolCards" class="poolGrid"></div>
+</section>
+
+<section id="bagSection" class="card hidden">
+  <h2>我的背包</h2><button id="backFromBag" class="secondary">返回</button><div id="bagList"></div>
+</section>
+
+
+<section id="historySection" class="card hidden">
+  <h2>我的抽獎紀錄</h2>
+  <button id="backFromHistory" class="secondary">返回</button>
+  <div id="historyList"></div>
+</section>
+
+<section id="gameSection" class="hidden">
+  <div class="card"><h2 id="poolTitle">賞池</h2><p id="poolDesc"></p><div id="majorOutGameNotice" class="majorOutNotice hidden">大獎已出<div class="majorOutSmall">A / B / C 賞已全部開出</div></div><p>每刮 <b id="costText" style="color:var(--gold)">10</b> 點</p><button id="backPools" class="secondary">返回賞池列表</button></div>
+  <section class="gameArea">
+    <aside class="statusPanel">
+      <h3>狀態</h3>
+      <div class="statusTitle">獎項狀態</div>
+      <div id="tierStatusLines"></div>
+      <div class="statusTitle">刮卡狀態</div>
+      <div class="statusLine">總刮數：<span id="totalScratchCount" class="statusNum">0</span></div>
+      <div class="statusLine">已刮開：<span id="openedScratchCount" class="statusNum">0</span></div>
+      <div class="statusLine">剩餘可刮：<span id="remainingScratchCount" class="statusNum">0</span></div><div class="statusLine">剩餘率：<span id="remainingRateText" class="statusNum">0%</span></div><div class="countdownBox"><div class="statusTitle">賞池保留時間</div><div id="poolCountdownText" class="countdownTime">10:00</div></div>
+    </aside>
+    <section class="boardWrap"><div class="boardShell"><div id="board" class="board"></div><div id="prizeOutOverlay" class="prizeOutOverlay hidden"><div>所有獎項已出</div><small>請更換新賞池</small></div></div></section>
+  </section>
+</section>
+</main>
+
+<div id="modal" class="modal hidden">
+  <div class="modalCard">
+    <button id="close" class="close">×</button><h2>刮開這一格</h2>
+    <div id="scratchBox" class="scratchBox"><div id="reveal" class="reveal bgD"><div id="revealTier" class="tier" >?</div><div id="revealName" class="name" ></div></div><canvas id="canvas" width="330" height="230"></canvas></div>
+    <p id="winText"></p><button id="finishBtn" class="hidden">完成</button>
+  </div>
+</div>
+
+
+<div id="prizeModal" class="modal hidden">
+  <div class="modalCard">
+    <button id="prizeClose" class="close">×</button>
+    <h2>獎項列表</h2>
+    <div id="prizeList"></div>
+  </div>
+</div>
+
+
+<div id="lastOneModal" class="modal hidden">
+  <div class="modalCard">
+    <h2>最後賞</h2>
+    <div id="lastOnePopupContent" class="lastOnePopupText"></div>
+    <button id="lastOneConfirmBtn">確認</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDQZBXtDUsRNRSh3yZlNlI6Uuly5LO9P0A",
+  authDomain: "scratch-card-3dedc.firebaseapp.com",
+  projectId: "scratch-card-3dedc",
+  storageBucket: "scratch-card-3dedc.firebasestorage.app",
+  messagingSenderId: "137821620494",
+  appId: "1:137821620494:web:93e94eb161b8947fe96f5f",
+  measurementId: "G-05DW2YH4FM"
+};
+const ADMIN_PASSWORD="0098";
+const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+const $=id=>document.getElementById(id);
+let uid=null, phone="", member={points:0,bag:[]}, pools=[], currentPool=null, unsubPools=null, unsubMember=null;
+let selected=null, currentPrize=null, scratched=false, prizeShown=false, hasStartedScratch=false, drawing=false;
+let currentLockId=null, poolIdleTimer=null, poolCountdownInterval=null, poolDeadlineMs=0, warnedFive=false, warnedOne=false, currentPoolHasPlayed=false;
+const canvas=$("canvas"), ctx=canvas.getContext("2d");
+
+function cleanPhone(v){return String(v||"").replace(/[^0-9]/g,"").slice(0,20)}
+function validPassword(v){return /^[A-Za-z0-9]{6,20}$/.test(String(v||""))}
+function askNewPassword(){
+  const p1=prompt("請設定登入密碼（6～20字，英文或數字）");
+  if(p1===null)return null;
+  if(!validPassword(p1)){alert("密碼格式錯誤：請輸入 6～20 字英文或數字");return null;}
+  const p2=prompt("請再次輸入密碼");
+  if(p2===null)return null;
+  if(p1!==p2){alert("兩次密碼不一致");return null;}
+  return p1;
+}
+function now(){return new Date().toLocaleString("zh-TW")}
+
+function remainingCount(pool){
+  const total=(pool.deck||[]).length;
+  const used=(pool.used||[]).filter(Boolean).length;
+  return Math.max(total-used,0);
+}
+function remainingRate(pool){
+  const total=(pool.deck||[]).length;
+  if(!total)return 0;
+  return Math.round((remainingCount(pool)/total)*1000)/10;
+}
+function getLastOne(pool){
+  return pool.lastOne || {};
+}
+function hasLastOne(pool){
+  const l=getLastOne(pool);
+  return !!(l.name && String(l.name).trim());
+}
+function isFinalScratch(pool, idx){
+  const used=pool.used||[];
+  if(used[idx]) return false;
+  return remainingCount(pool)===1;
+}
+
+function tierClass(t){return String(t).includes("A")?"tierA":String(t).includes("B")?"tierB":String(t).includes("C")?"tierC":"tierD"}
+function bgClass(t){return String(t).includes("A")?"bgA":String(t).includes("B")?"bgB":String(t).includes("C")?"bgC":"bgD"}
+
+onAuthStateChanged(auth,u=>{if(u){uid=u.uid;watchPools()}});
+signInAnonymously(auth).catch(e=>alert("Firebase登入失敗："+e.message));
+
+async function ensureMember(ph,pw){
+  const ref=doc(db,"members",ph), snap=await getDoc(ref);
+
+  if(!snap.exists()){
+    const newPw = pw && validPassword(pw) ? pw : askNewPassword();
+    if(!newPw) throw new Error("尚未設定密碼");
+    await setDoc(ref,{phone:ph,password:newPw,points:50,bag:[],pointLogs:[{type:"新會員獎勵",amount:50,time:now()}],createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    alert("註冊成功，已贈送 50 點");
+    return true;
+  }
+
+  const data=snap.data();
+  if(!data.password){
+    const newPw = pw && validPassword(pw) ? pw : askNewPassword();
+    if(!newPw) throw new Error("尚未設定密碼");
+    await setDoc(ref,{password:newPw,updatedAt:serverTimestamp()},{merge:true});
+    alert("已設定登入密碼");
+    return true;
+  }
+
+  if(!pw){alert("請輸入密碼");return false;}
+  if(String(pw)!==String(data.password)){
+    alert("密碼錯誤，忘記密碼請找商家重設");
+    return false;
+  }
+  await setDoc(ref,{lastLoginAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
+  return true;
+}
+function watchMember(ph){
+  if(unsubMember)unsubMember();
+  unsubMember=onSnapshot(doc(db,"members",ph),snap=>{
+    member=snap.exists()?snap.data():{points:0,bag:[]};
+    if(!Array.isArray(member.bag))member.bag=[];
+    $("memberPhone").textContent="會員："+ph;$("memberPoints").textContent=Number(member.points||0);renderBag();
+  });
+}
+function watchPools(){
+  if(unsubPools)unsubPools();
+  unsubPools=onSnapshot(collection(db,"pools"),snap=>{
+    pools=snap.docs.map(d=>({id:d.id,...d.data()}));
+    pools=pools.filter(p=>p.isActive!==false);
+    renderPoolCards();
+    if(currentPool){const fresh=pools.find(p=>p.id===currentPool.id);if(fresh){currentPool=fresh;renderGame()}}
+  });
+}
+$("loginBtn").onclick=async()=>{
+  const ph=cleanPhone($("phoneInput").value);
+  const pw=$("passwordInput")?$("passwordInput").value:"";
+  if(ph.length<8)return alert("手機號碼格式不對");
+  try{
+    const ok=await ensureMember(ph,pw);
+    if(!ok)return;
+    phone=ph;
+    localStorage.setItem("ichiban_phone",phone);
+    watchMember(phone);
+    watchPools();
+    $("loginCard").classList.add("hidden");
+    $("memberCard").classList.remove("hidden");
+    $("poolList").classList.remove("hidden");
+  }catch(e){
+    alert(e.message||String(e));
+  }
+};
+
+if($("changePasswordBtn"))$("changePasswordBtn").onclick=async()=>{
+  if(!phone)return alert("請先登入");
+  const oldPw=prompt("請輸入目前密碼");
+  if(oldPw===null)return;
+  if(String(oldPw)!==String(member.password||""))return alert("目前密碼錯誤");
+  const newPw=askNewPassword();
+  if(!newPw)return;
+  await setDoc(doc(db,"members",phone),{password:newPw,updatedAt:serverTimestamp()},{merge:true});
+  alert("密碼已修改，下次登入請使用新密碼");
+};
+
+$("logoutBtn").onclick=()=>{localStorage.removeItem("ichiban_phone");location.reload()};
+const saved=localStorage.getItem("ichiban_phone");if(saved){$("phoneInput").value=saved;}
+
+function renderPoolCards(){
+  const box=$("poolCards");box.innerHTML="";
+  if(!pools.length){box.innerHTML="<p>目前沒有賞池。</p>";return}
+  pools.forEach(p=>{
+    const used=(p.used||[]).filter(Boolean).length;
+    const total=(p.deck||[]).length;
+    const remain=total-used;
+    const images=p.images||{};
+    const tierSummary=["A賞","B賞","C賞","D賞"].map(tier=>{
+      const tTotal=(p.deck||[]).filter(x=>x.tier===tier).length;
+      const tOpened=(p.deck||[]).filter((x,i)=>x.tier===tier && (p.used||[])[i]).length;
+      return `${tier}：${Math.max(tTotal-tOpened,0)}/${tTotal}`;
+    }).join("<br>");
+
+    const div=document.createElement("div");
+    div.className="poolCard";
+    div.innerHTML=`
+      ${images.cover?`<img class="poolCover" src="${images.cover}">`:""}
+      <h3>${p.title||p.id}</h3>
+      <p>${p.description||""}</p>
+      ${typeof majorPrizesOut==="function" && majorPrizesOut(p)?`<div class="majorOutNotice">大獎已出<div class="majorOutSmall">A / B / C 賞已全部開出</div></div>`:""}
+      <p>${tierSummary}</p>
+      <p>每刮 <b style="color:var(--gold)">${p.cost||10}</b> 點</p>
+      <p>剩餘 ${remain} / ${total}</p>
+      ${typeof remainingRate==="function"?`<div class="rateBadge">剩餘率 ${remainingRate(p)}%</div>`:""}
+      ${typeof hasLastOne==="function" && hasLastOne(p)?`<div class="lastOneBadge">最後賞：${getLastOne(p).name}</div>`:""}
+      <button class="secondary viewPrizeBtn" type="button">查看獎項</button>
+      <button class="blue enterPoolBtn" type="button">進入賞池</button>
+    `;
+
+    const viewBtn=div.querySelector(".viewPrizeBtn");
+    if(viewBtn) viewBtn.onclick=()=>{ if(typeof showPrizeList==="function") showPrizeList(p); };
+
+    const enterBtn=div.querySelector(".enterPoolBtn");
+    if(enterBtn) enterBtn.onclick=async()=>{
+      if(typeof tryEnterPool==="function"){
+        const ok=await tryEnterPool(p);
+        if(!ok)return;
+        currentLockId=p.id;
+        if(typeof startPoolIdleTimer==="function")startPoolIdleTimer();
+      }
+      currentPool=p;
+      $("poolList").classList.add("hidden");
+      $("bagSection").classList.add("hidden");
+      if($("historySection"))$("historySection").classList.add("hidden");
+      $("gameSection").classList.remove("hidden");
+      renderGame();
+    };
+
+    box.appendChild(div);
+  });
+}
+$("backPools").onclick=async()=>{await releaseCurrentPool();clearTimeout(poolIdleTimer);clearInterval(poolCountdownInterval);currentPool=null;$("gameSection").classList.add("hidden");$("poolList").classList.remove("hidden")};
+
+function renderGame(){
+  const p=currentPool;if(!p)return;
+  $("poolTitle").textContent=p.title||p.id;$("poolDesc").textContent=p.description||"";$("costText").textContent=p.cost||10;if($("majorOutGameNotice"))$("majorOutGameNotice").classList.toggle("hidden",!majorPrizesOut(p));
+  const deck=p.deck||[], used=p.used||[];$("board").style.gridTemplateColumns=`repeat(${Number(p.cols||16)},1fr)`;$("board").innerHTML="";
+  deck.forEach((pr,i)=>{const box=document.createElement("div");box.className="cellBox";const dot=document.createElement("button");dot.className="cellDot";if(used[i]){dot.classList.add("used",tierClass(pr.tier));dot.textContent=pr.tier}else dot.onclick=()=>openScratch(i);box.appendChild(dot);$("board").appendChild(box)});
+  const total=deck.length, opened=used.filter(Boolean).length, remain=total-opened;
+  $("totalScratchCount").textContent=total;
+  $("openedScratchCount").textContent=opened;
+  $("remainingScratchCount").textContent=remain;if($("remainingRateText"))$("remainingRateText").textContent=remainingRate(p)+"%";
+  renderTierStatus(deck, used);
+  $("prizeOutOverlay").classList.toggle("hidden",remain>0);
+}
+
+function renderTierStatus(deck, used){
+  const tiers=["A賞","B賞","C賞","D賞"];
+  const box=$("tierStatusLines");
+  if(!box)return;
+  box.innerHTML="";
+  tiers.forEach(tier=>{
+    const total=deck.filter(x=>x.tier===tier).length;
+    const opened=deck.filter((x,i)=>x.tier===tier && used[i]).length;
+    const remain=Math.max(total-opened,0);
+    const div=document.createElement("div");
+    div.className="statusLine";
+    div.innerHTML=`${tier}：<span class="statusNum">${remain}/${total}</span>`;
+    box.appendChild(div);
+  });
+}
+
+function tierRemaining(pool, tier){
+  const deck=pool.deck||[];
+  const used=pool.used||[];
+  const total=deck.filter(x=>x.tier===tier).length;
+  const opened=deck.filter((x,i)=>x.tier===tier && used[i]).length;
+  return Math.max(total-opened,0);
+}
+function majorPrizesOut(pool){
+  return tierRemaining(pool,"A賞")===0 && tierRemaining(pool,"B賞")===0 && tierRemaining(pool,"C賞")===0;
+}
+
+
+function shouldShowLastOnePopup(){
+  if(!currentPool || !hasLastOne(currentPool) || selected===null)return false;
+  return isFinalScratch(currentPool, selected);
+}
+function showLastOnePopupIfNeeded(){
+  if(!shouldShowLastOnePopup())return false;
+  const l=getLastOne(currentPool);
+  const box=$("lastOnePopupContent");
+  if(box){
+    box.innerHTML=`恭喜獲得最後賞<br>${l.name||""}${l.imageUrl?`<br><img src="${l.imageUrl}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px">`:""}`;
+  }
+  $("lastOneModal").classList.remove("hidden");
+  return true;
+}
+
+
+async function markCurrentPoolPlayed(){
+  if(typeof forceStartCountdown==="function"){
+    forceStartCountdown();
+  }else if(typeof startPoolIdleTimer==="function"){
+    startPoolIdleTimer();
+  }
+}
+
+async function openScratch(i){
+  const p=currentPool;if(!phone)return alert("請先登入");if(!p||(p.used||[])[i])return alert("這格已刮過");if(Number(member.points||0)<Number(p.cost||10))return alert("點數不足，請找店員加點");
+  if(!confirm(`是否扣除 ${Number(p.cost||10)} 點玩一次？`))return;
+  await markCurrentPoolPlayed();
+  selected=i;currentPrize=(p.deck||[])[i];scratched=false;prizeShown=false;hasStartedScratch=false;
+  $("scratchBox").className="scratchBox";$("reveal").className="reveal "+bgClass(currentPrize.tier);$("revealTier").textContent=currentPrize.tier;$("revealName").textContent=currentPrize.name;$("revealTier").style.visibility="hidden";$("revealName").style.visibility="hidden";$("winText").textContent="";$("finishBtn").textContent="完成";$("finishBtn").classList.add("hidden");$("finishBtn").disabled=false;$("close").classList.remove("hidden");$("modal").classList.remove("hidden");setupCanvas();
+}
+function setupCanvas(){ctx.globalCompositeOperation="source-over";const g=ctx.createLinearGradient(0,0,canvas.width,canvas.height);g.addColorStop(0,"#111");g.addColorStop(.5,"#666");g.addColorStop(1,"#111");ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#1b1b1b";ctx.fillRect(0,0,canvas.width,4);ctx.fillRect(0,canvas.height-4,canvas.width,4);ctx.fillRect(0,0,4,canvas.height);ctx.fillRect(canvas.width-4,0,4,canvas.height);ctx.fillStyle="rgba(255,255,255,.92)";ctx.textAlign="center";ctx.font="900 36px sans-serif";ctx.fillText("刮開",canvas.width/2,canvas.height/2+12);ctx.globalCompositeOperation="destination-out"}
+function getPos(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}
+function scratch(e){if(!hasStartedScratch){hasStartedScratch=true;$("close").classList.add("hidden")}const p=getPos(e);ctx.beginPath();ctx.arc(p.x,p.y,23,0,Math.PI*2);ctx.fill();checkScratch()}
+function checkScratch(){
+  const boxW=Math.floor(canvas.width*.56),boxH=Math.floor(canvas.height*.5),sx=Math.floor((canvas.width-boxW)/2),sy=Math.floor((canvas.height-boxH)/2);
+  const data=ctx.getImageData(sx,sy,boxW,boxH).data;
+  let clear=0;
+  for(let i=3;i<data.length;i+=4)if(data[i]===0)clear++;
+  const ratio=clear/(data.length/4);
+
+  // 刮一點點：只顯示完成/選下一刮，不公布獎項
+  if(ratio>0.08&&!scratched){
+    scratched=true;
+    $("finishBtn").textContent="完成 / 選下一刮";
+    $("finishBtn").classList.remove("hidden");
+  }
+
+  // 刮到比較完整：才顯示獎項文字
+  if(ratio>0.55&&!prizeShown){
+    prizeShown=true;
+    $("revealTier").style.visibility="visible";
+    $("revealName").style.visibility="visible";
+    $("winText").textContent="恭喜獲得："+currentPrize.tier+" "+currentPrize.name;
+  }
+}
+canvas.addEventListener("pointerdown",e=>{drawing=true;scratch(e)});canvas.addEventListener("pointermove",e=>{if(drawing)scratch(e)});canvas.addEventListener("pointerup",()=>drawing=false);canvas.addEventListener("pointerleave",()=>drawing=false);
+$("close").onclick=()=>{if(!hasStartedScratch)$("modal").classList.add("hidden")};
+async function completeScratch(){if(selected===null)return;$("finishBtn").disabled=true;const poolId=currentPool.id,idx=selected;selected=null;try{await runTransaction(db,async tx=>{const pref=doc(db,"pools",poolId),mref=doc(db,"members",phone);const ps=await tx.get(pref),ms=await tx.get(mref);if(!ps.exists())throw new Error("賞池不存在");if(!ms.exists())throw new Error("會員不存在");const p=ps.data(),m=ms.data();const used=[...(p.used||[])],deck=p.deck||[];if(used[idx])throw new Error("這格已經被別人刮走");if(Number(m.points||0)<Number(p.cost||10))throw new Error("點數不足");used[idx]=true;const imgs=p.images||{};const finalScratch=isFinalScratch(p,idx);
+      const lastOne=getLastOne(p);
+      const item={id:Date.now()+"_"+Math.random().toString(36).slice(2,6),poolId,poolTitle:p.title,index:idx+1,tier:deck[idx].tier,name:deck[idx].name,exchangePoints:Number(deck[idx].exchangePoints||0),imageUrl:imgs[String(deck[idx].tier||"D賞")[0]]||"",status:"未兌換",time:now()};
+      const extraItems=[];
+      if(finalScratch && hasLastOne(p)){
+        extraItems.push({id:Date.now()+"_last_"+Math.random().toString(36).slice(2,6),poolId,poolTitle:p.title,index:"最後賞",tier:"最後賞",name:lastOne.name,exchangePoints:Number(lastOne.exchangePoints||0),imageUrl:lastOne.imageUrl||"",status:"未兌換",isLastOne:true,time:now()});
+      }const bag=[...(m.bag||[]),item,...extraItems];const log={time:now(),phone,index:idx+1,tier:item.tier,name:item.name,poolTitle:p.title,isLastOne:false};const poolLogs=finalScratch&&hasLastOne(p)?[{time:now(),phone,index:"最後賞",tier:"最後賞",name:lastOne.name,poolTitle:p.title,isLastOne:true},log,...(p.logs||[])]:[log,...(p.logs||[])];tx.update(pref,{used,logs:poolLogs.slice(0,200),updatedAt:serverTimestamp()});const drawLogs=finalScratch&&hasLastOne(p)?[...(m.drawLogs||[]),{time:now(),poolId,poolTitle:p.title,tier:item.tier,name:item.name,index:idx+1},{time:now(),poolId,poolTitle:p.title,tier:"最後賞",name:lastOne.name,index:"最後賞",isLastOne:true}]:[...(m.drawLogs||[]),{time:now(),poolId,poolTitle:p.title,tier:item.tier,name:item.name,index:idx+1}];tx.update(mref,{points:Number(m.points||0)-Number(p.cost||10),bag,drawLogs:drawLogs.slice(-300),pointLogs:[{type:"刮獎扣點",amount:-Number(p.cost||10),time:now()},...(m.pointLogs||[])].slice(0,200)})});$("modal").classList.add("hidden")}catch(e){alert(e.message||String(e));$("modal").classList.add("hidden")}};
+
+
+$("showHistory").onclick=()=>{
+  $("poolList").classList.add("hidden");
+  $("gameSection").classList.add("hidden");
+  $("bagSection").classList.add("hidden");
+  $("historySection").classList.remove("hidden");
+  renderHistory();
+};
+$("backFromHistory").onclick=()=>{
+  $("historySection").classList.add("hidden");
+  $("poolList").classList.remove("hidden");
+};
+function renderHistory(){
+  const box=$("historyList");
+  if(!box)return;
+  const list=member.drawLogs||[];
+  box.innerHTML="";
+  if(!list.length){box.innerHTML="<p>目前沒有抽獎紀錄。</p>";return}
+  list.slice().reverse().forEach(l=>{
+    const div=document.createElement("div");
+    div.className="historyItem";
+    div.innerHTML=`<h3>${l.tier||""} ${l.name||""}</h3><p>${l.poolTitle||""}</p><p>${l.time||""}</p>${l.isLastOne?'<div class="lastOneBadge">最後賞</div>':""}`;
+    box.appendChild(div);
+  });
+}
+
+$("showBag").onclick=()=>{$("poolList").classList.add("hidden");$("gameSection").classList.add("hidden");$("bagSection").classList.remove("hidden");renderBag()};
+$("backFromBag").onclick=()=>{$("bagSection").classList.add("hidden");$("poolList").classList.remove("hidden")};
+
+function isSmallPrizeItem(item){
+  return String(item.tier||"").includes("D");
+}
+function isBigPrizeItem(item){
+  return !isSmallPrizeItem(item);
+}
+
+function renderBag(){
+  const box=$("bagList");
+  if(!box)return;
+  box.innerHTML="";
+  const allBag=member.bag||[];
+  const unredeemed=allBag.filter(item=>item.status==="未兌換");
+
+  if(!unredeemed.length){
+    box.innerHTML="<p>背包目前沒有未兌換的獎品。</p>";
+    return;
+  }
+
+  function renderSection(title,items,type){
+    const h=document.createElement("div");
+    h.className="bagSectionTitle";
+    h.textContent=title;
+    box.appendChild(h);
+
+    const available=items.filter(x=>Number(x.exchangePoints||0)>0);
+    const total=available.reduce((sum,x)=>sum+Number(x.exchangePoints||0),0);
+
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className="blue";
+    btn.textContent=`一鍵兌換${title}點數（${available.length}個 / ${total}點）`;
+    btn.disabled=!available.length;
+    btn.addEventListener("click",()=>exchangeItemsByType(type));
+    box.appendChild(btn);
+
+    if(!items.length){
+      const empty=document.createElement("p");
+      empty.textContent=`目前沒有${title}未兌換獎品。`;
+      box.appendChild(empty);
+      return;
+    }
+
+    items.slice().reverse().forEach(item=>{
+      const img=item.imageUrl?`<img src="${item.imageUrl}">`:"";
+      const div=document.createElement("div");
+      div.className="bagItem";
+      div.innerHTML=`<h3>${item.tier} ${item.name}</h3>${img}<p>取得時間：${item.time||""}</p><p>狀態：${item.status}</p><p>可兌換：${item.exchangePoints||0} 點</p>`;
+
+      const claim=document.createElement("button");
+      claim.type="button";
+      claim.textContent="領取獎品";
+      claim.addEventListener("click",()=>claimItem(item.id,false));
+
+      const exchange=document.createElement("button");
+      exchange.type="button";
+      exchange.textContent="兌換點數";
+      exchange.className="blue";
+      exchange.addEventListener("click",()=>claimItem(item.id,true));
+
+      div.appendChild(claim);
+      div.appendChild(exchange);
+      box.appendChild(div);
+    });
+  }
+
+  renderSection("大獎區",unredeemed.filter(isBigPrizeItem),"big");
+  renderSection("小賞區",unredeemed.filter(isSmallPrizeItem),"small");
+}
+async function exchangeItemsByType(type){
+  const matcher=type==="small"?isSmallPrizeItem:isBigPrizeItem;
+  const label=type==="small"?"小賞區":"大獎區";
+  const available=(member.bag||[]).filter(x=>matcher(x) && x.status==="未兌換" && Number(x.exchangePoints||0)>0);
+
+  if(!available.length){
+    alert(`${label}沒有可兌換點數的獎品`);
+    return;
+  }
+
+  const total=available.reduce((sum,x)=>sum+Number(x.exchangePoints||0),0);
+
+  if(!confirm(`確定要把${label} ${available.length} 個獎品兌換成 ${total} 點嗎？`)){
+    return;
+  }
+
+  await runTransaction(db,async tx=>{
+    const ref=doc(db,"members",phone);
+    const snap=await tx.get(ref);
+    if(!snap.exists())throw new Error("找不到會員");
+
+    const m=snap.data();
+    const bag=[...(m.bag||[])];
+    let addPoints=0;
+    const pointLogs=[];
+    const redeemLogs=[...(m.redeemLogs||[])];
+
+    bag.forEach(item=>{
+      if(matcher(item) && item.status==="未兌換" && Number(item.exchangePoints||0)>0){
+        const pts=Number(item.exchangePoints||0);
+        item.status="已換點";
+        item.redeemedAt=now();
+        addPoints+=pts;
+        pointLogs.push({type:"獎品換點",amount:pts,item:item.name,time:now()});
+        redeemLogs.push({
+          time:now(),
+          phone,
+          item:item.name,
+          tier:item.tier,
+          status:"已換點",
+          points:pts,
+          poolTitle:item.poolTitle||""
+        });
+      }
+    });
+
+    tx.update(ref,{
+      bag,
+      points:Number(m.points||0)+addPoints,
+      redeemLogs:redeemLogs.slice(-300),
+      pointLogs:[...pointLogs,...(m.pointLogs||[])].slice(0,200)
+    });
+  });
+
+  alert(`${label}兌換成功，獲得 ${total} 點`);
+}
+async function claimItem(itemId,toPoints){
+  if(!toPoints){
+    const pass=prompt("請店員輸入領獎密碼");
+    if(pass!==ADMIN_PASSWORD)return alert("密碼錯誤");
+  }else{
+    if(!confirm("確定要把這個獎品兌換成點數？"))return;
+  }
+  await runTransaction(db,async tx=>{
+    const ref=doc(db,"members",phone),snap=await tx.get(ref);
+    const m=snap.data(),bag=[...(m.bag||[])];
+    const i=bag.findIndex(x=>x.id===itemId);
+    if(i<0)throw new Error("找不到獎品");
+    if(bag[i].status!=="未兌換")throw new Error("此獎品已處理");
+    const pts=Number(bag[i].exchangePoints||0);
+    bag[i].status=toPoints?"已換點":"已領獎";
+    bag[i].redeemedAt=now();
+    const redeemRecord={time:now(),phone,item:bag[i].name,tier:bag[i].tier,status:toPoints?"已換點":"已領獎",points:toPoints?pts:0,poolTitle:bag[i].poolTitle||""};
+    const updates={bag,redeemLogs:[...(m.redeemLogs||[]),redeemRecord].slice(-300)};
+    if(toPoints){
+      updates.points=Number(m.points||0)+pts;
+      updates.pointLogs=[{type:"獎品換點",amount:pts,item:bag[i].name,time:now()},...(m.pointLogs||[])].slice(0,200);
+    }
+    tx.update(ref,updates);
+  });
+  alert(toPoints?"已兌換成點數":"領獎成功");
+}
+
+// 修正：賞池倒數每秒更新
+function forceSetCountdown(seconds){
+  const el=$("poolCountdownText") || $("idleCountdown");
+  if(!el)return;
+  const s=Math.max(0,Math.ceil(seconds));
+  const m=String(Math.floor(s/60)).padStart(2,"0");
+  const r=String(s%60).padStart(2,"0");
+  el.textContent=`${m}:${r}`;
+}
+
+function forceStartCountdown(){
+  try{clearInterval(poolCountdownInterval);}catch(e){}
+  try{clearTimeout(poolIdleTimer);}catch(e){}
+
+  poolDeadlineMs=Date.now()+10*60*1000;
+  forceSetCountdown(10*60);
+
+  poolCountdownInterval=setInterval(()=>{
+    const left=(poolDeadlineMs-Date.now())/1000;
+    forceSetCountdown(left);
+    if(left<=0){
+      clearInterval(poolCountdownInterval);
+    }
+  },1000);
+
+  poolIdleTimer=setTimeout(async()=>{
+    if(currentPool){
+      alert("你在此賞池超過 10 分鐘未刮獎，已自動退出賞池。");
+      try{
+        if(typeof releaseCurrentPool==="function") await releaseCurrentPool();
+      }catch(e){}
+      currentPool=null;
+      $("gameSection").classList.add("hidden");
+      $("poolList").classList.remove("hidden");
+    }
+  },10*60*1000);
+}
+
+if(typeof startPoolIdleTimer==="function"){
+  startPoolIdleTimer=forceStartCountdown;
+}
+
+// 修正：返回賞池列表
+if($("backPools")){
+  $("backPools").onclick=async()=>{
+    try{
+      if(typeof releaseCurrentPool==="function") await releaseCurrentPool();
+    }catch(e){console.warn("release pool failed",e);}
+    try{clearTimeout(poolIdleTimer);}catch(e){}
+    try{clearInterval(poolCountdownInterval);}catch(e){}
+    currentPool=null;
+    $("gameSection").classList.add("hidden");
+    $("bagSection").classList.add("hidden");
+    if($("historySection"))$("historySection").classList.add("hidden");
+    $("poolList").classList.remove("hidden");
+    if(typeof watchPools==="function")watchPools();
+  };
+}
+
+</script>
+</body>
+</html>
